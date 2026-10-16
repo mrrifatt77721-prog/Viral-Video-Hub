@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Viral Video Hub</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#0c1110;--panel:#151d1a;--muted:#9ca9a3;--green:#39e58c;--line:#26342d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f4faf6;font:15px system-ui,-apple-system,sans-serif;padding-bottom:82px}
+header{position:sticky;top:0;z-index:3;background:#0c1110ee;backdrop-filter:blur(12px);padding:17px 16px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.logo{background:var(--green);color:#082013;font-weight:900;border-radius:12px;padding:9px}h1{font-size:18px;margin:0}small,.muted{color:var(--muted)}.wrap{padding:16px;max-width:720px;margin:auto}
+.search{display:flex;gap:8px;margin:14px 0}.search input{min-width:0;flex:1}.field,input,textarea,select{background:#0c1310;color:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;width:100%}
+button{border:0;border-radius:12px;background:var(--green);color:#062012;font-weight:800;padding:12px 14px;font:inherit;cursor:pointer}.secondary{background:#223129;color:#e9fff1}.chips{display:flex;gap:8px;overflow:auto;padding:4px 0 15px}.chip{white-space:nowrap;background:#1b2721;color:#cde2d5;border:1px solid var(--line);border-radius:30px;padding:8px 13px}.chip.active{background:var(--green);color:#052012}
+h2{font-size:17px;margin:18px 0 12px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}.preview{height:110px;background:linear-gradient(135deg,#19392a,#16211c);display:grid;place-items:center;font-size:32px}.body{padding:11px}.body strong{display:block;overflow-wrap:anywhere}.body p{font-size:12px;color:var(--muted);margin:7px 0}.meta{display:flex;justify-content:space-between;align-items:center;gap:5px}.meta button{padding:8px 10px;font-size:12px}.ad{margin:14px 0;background:#19251e;border:1px dashed #4a765b;border-radius:15px;padding:14px}.ad label{font-size:10px;color:var(--green);letter-spacing:1px}.ad h3{font-size:15px;margin:6px 0}.ad p{margin:0 0 10px;color:#b4c5ba;font-size:13px}.nav{position:fixed;bottom:0;left:0;right:0;background:#111915;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:9px 4px calc(9px + env(safe-area-inset-bottom));z-index:5}.nav button{background:transparent;color:#a8b7ad;font-size:11px;padding:6px}.nav button.active{color:var(--green)}.nav span{display:block;font-size:19px;margin-bottom:2px}.page{display:none}.page.active{display:block}.profilebox{background:var(--panel);border:1px solid var(--line);padding:18px;border-radius:18px}.avatar{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--green);color:#062012;font-size:24px;font-weight:900;margin-bottom:10px}.empty{padding:25px 12px;text-align:center;color:var(--muted);grid-column:1/-1}.note{font-size:11px;color:var(--muted);line-height:1.5}
+</style>
+</head>
+<body>
+<header><div class="logo">▶</div><div><h1>Viral Video Hub</h1><small>Videos • Discover • Save links</small></div></header>
+<main class="wrap">
+<section class="page active" id="home">
+<div class="search"><input id="search" placeholder="Search videos..." aria-label="Search videos"><button onclick="loadVideos()">Search</button></div>
+<div class="chips" id="chips"></div>
+<div id="ad"></div>
+<h2>Latest videos</h2><div class="grid" id="videos"><div class="empty">Loading videos…</div></div>
+<p class="note">Only open or download videos you have permission to save. Some platforms do not allow direct downloading.</p>
+</section>
+<section class="page" id="downloads"><h2>Saved videos</h2><div class="grid" id="saved"></div><p class="muted">Your saved list is stored on this device.</p></section>
+<section class="page" id="history"><h2>Recently opened</h2><div class="grid" id="historyList"></div></section>
+<section class="page" id="profile"><h2>Your profile</h2><div class="profilebox"><div class="avatar" id="avatar">U</div><h2 id="profileName">Telegram user</h2><p class="muted" id="profileId">Open inside Telegram to load your profile.</p><p id="profileStats">Saved: 0 • Opened: 0</p></div><h2>About</h2><p class="muted">Video discovery mini app.</p></section>
+</main>
+<nav class="nav">
+<button class="active" data-page="home"><span>⌂</span>Home</button><button data-page="downloads"><span>♡</span>Saved</button><button data-page="history"><span>◷</span>History</button><button data-page="profile"><span>♙</span>Profile</button>
+</nav>
+<script>
+const tg=window.Telegram?.WebApp; if(tg){tg.ready();tg.expand();if(tg.setHeaderColor)tg.setHeaderColor('#0c1110');}
+let allVideos=[], category='All';
+const readList=k=>{try{return JSON.parse(localStorage.getItem(k)||'[]')}catch{return[]}};
+const writeList=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function card(v){return `<article class="card"><div class="preview">▶</div><div class="body"><strong>${esc(v.title)}</strong><p>${esc(v.category)} · ${v.views||0} views</p><p>${esc(v.description||'')}</p><div class="meta"><button onclick="openVideo('${v.id}')">Open video</button><button class="secondary" onclick="saveVideo('${v.id}')">♡ Save</button></div></div></article>`}
+function renderGrid(id,items){document.getElementById(id).innerHTML=items.length?items.map(card).join(''):'<div class="empty">Nothing here yet.</div>'}
+async function loadVideos(){try{const r=await fetch('/api/videos');allVideos=await r.json();const cats=['All',...new Set(allVideos.map(v=>v.category||'Other'))];document.getElementById('chips').innerHTML=cats.map(c=>`<button class="chip ${c===category?'active':''}" onclick="chooseCategory('${esc(c)}')">${esc(c)}</button>`).join('');const q=document.getElementById('search').value.toLowerCase();renderGrid('videos',allVideos.filter(v=>(category==='All'||v.category===category)&&(v.title+' '+v.description+' '+v.category).toLowerCase().includes(q)));renderGrid('saved',allVideos.filter(v=>readList('saved').includes(v.id)));renderGrid('historyList',readList('history').map(id=>allVideos.find(v=>v.id===id)).filter(Boolean));updateStats()}catch{document.getElementById('videos').innerHTML='<div class="empty">Could not load videos. Check the server connection.</div>'}}
+function chooseCategory(c){category=c;loadVideos()}
+async function openVideo(id){const v=allVideos.find(x=>x.id===id);if(!v)return;let h=readList('history').filter(x=>x!==id);h.unshift(id);writeList('history',h.slice(0,30));fetch('/api/videos/'+id+'/view',{method:'POST'}).catch(()=>{});updateStats();if(v.url.startsWith('/uploads/')||/\.(mp4|webm|mov)(\?|$)/i.test(v.url)){location.href=v.url}else if(tg?.openLink){tg.openLink(v.url)}else{window.open(v.url,'_blank','noopener')}}
+function saveVideo(id){let a=readList('saved');a=a.includes(id)?a.filter(x=>x!==id):[id,...a];writeList('saved',a);loadVideos()}
+function updateStats(){const u=tg?.initDataUnsafe?.user;const name=u?[u.first_name,u.last_name].filter(Boolean).join(' '):'Telegram user';document.getElementById('profileName').textContent=name;document.getElementById('avatar').textContent=(u?.first_name||'U').slice(0,1).toUpperCase();document.getElementById('profileId').textContent=u?'Telegram ID: '+u.id:'Open this mini app from Telegram to show account details.';document.getElementById('profileStats').textContent=`Saved: ${readList('saved').length} • Opened: ${readList('history').length}`}
+async function loadAd(){try{const r=await fetch('/api/config'),d=await r.json();if(d.ad){document.getElementById('ad').innerHTML=`<div class="ad"><label>ADVERTISEMENT</label><h3>${esc(d.ad.title)}</h3><p>${esc(d.ad.text)}</p>${d.ad.url?`<button onclick="adClick('${encodeURIComponent(d.ad.url)}')">Learn more</button>`:''}</div>`}}catch{}}
+function adClick(url){fetch('/api/ads/view',{method:'POST'}).catch(()=>{});const u=decodeURIComponent(url);if(tg?.openLink)tg.openLink(u);else window.open(u,'_blank','noopener')}
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===b.dataset.page));if(b.dataset.page==='downloads'||b.dataset.page==='history')loadVideos()}));
+document.getElementById('search').addEventListener('input',loadVideos);
+loadVideos();loadAd();
+</script>
+</body></html>
