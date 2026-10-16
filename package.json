@@ -1,0 +1,13 @@
+{
+  "name": "telegram-viral-miniapp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Telegram Mini App with video management, profiles, admin panel and ad banner",
+  "main": "server.js",
+  "scripts": {"start": "node server.js"},
+  "dependencies": {
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
+    "node-telegram-bot-api": "^0.66.0"
+  }
+}
